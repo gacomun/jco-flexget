@@ -8,18 +8,17 @@ tasks:
       type: movies
       strip_dates: yes
     accept_all: yes
+    disable:
+      - seen
 #    seen: local  # We don't want accepted movies on this feed to affect actual download feed
     list_add:
       - movie_list: pelidescarga  # you can call this whatever you want
-    tmdb_lookup:
-      language: es
   # task that automatically downloads movies from the movie_list
   movies search:
-    trakt_lookup: yes  # can also use imdb_lookup or tmdb_lookup
     priority: 10 # run after the movie queue fill task
     discover:
       what:
-        - movie_list: pelidescarga
+        - movie_list: Movies-Esp
       from:
         - descargas2020: yes
       #interval: 1 days
@@ -27,26 +26,70 @@ tasks:
     quality: hdrip # Make sure no screeners or cams are downloaded
     list_match:
       from:
-        - movie_list: pelidescarga
+        - movie_list: Movies-Esp
     transmission:
       host: 192.168.1.38
       port: 9091
-      username: gacomun
+      username: admin
       password: JcO45101814
-  remove_stale_torrents:
-    from_transmission:
-      host: 192.168.1.38
-      port: 9091
-      username: gacomun
-      password: JcO45101814
-    disable: [seen, seen_info_hash]
-    if:
-      - transmission_progress == 100: accept
-      - not transmission_seed_ratio_ok: reject
-      - not transmission_idle_limit_ok: reject
-    transmission:
-      host: 192.168.1.38
-      port: 9091
-      username: gacomun
-      password: JcO45101814
-      action: purge
+  Movies-Queue-Esp: 
+    priority: 4
+    exec:
+      on_exit:
+        for_accepted:
+          - echo "tmdb_name     {{tmdb_name}}" >> ''
+          - echo "movie_name    {{movie_name}}" >> ''
+    inputs:
+      - trakt_list:
+          account: gacomun@gmail.com
+          list: peliculas-descarga
+          type: movies
+    accept_all: yes
+    disable:
+      - seen
+    list_clear:
+      what:
+        - movie_list: Movies-Esp
+      phase: start
+    list_add:
+      - movie_list: Movies-Esp
+    tmdb_lookup:
+      language: es
+  Movies-Download-Esp:  
+    priority: 5
+    torrent_alive: 2
+    no_entries_ok: yes
+    tmdb_lookup:
+      language: es
+    discover:
+      what:
+        - movie_list: Movies-Esp
+      from:
+        - descargas2020: yes
+    quality: webrip+
+    content_size:
+      min: 500
+      max: 20000      
+    list_match:
+      from:
+        - movie_list: Movies-Esp
+    set:
+      path: '/home/gacomun/Desarrollo/jco-flexget/descargas/'  
+      label: movies 
+#  remove_stale_torrents:
+#    from_transmission:
+#      host: 192.168.1.38
+#      port: 9091
+#      username: gacomun
+#      password: JcO45101814
+#    disable: [seen, seen_info_hash]
+#    if:
+#      - transmission_progress == 100: accept
+#      - not transmission_seed_ratio_ok: reject
+#      - not transmission_idle_limit_ok: reject
+#    transmission:
+#      host: 192.168.1.38
+#      port: 9091
+#      username: gacomun
+#      password: JcO45101814
+#      action: purge

@@ -1,0 +1,10 @@
+tasks:
+  # Esta tarea sincroniza la lista de pelis
+  sync-movies:
+    trakt_list:
+      username: usuario-trakt
+      account: usuario-api
+      list: lista-pelis
+    accept_all: yes
+    list_add:
+      - movie_list: lista-pelis

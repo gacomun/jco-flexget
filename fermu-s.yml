@@ -1,0 +1,53 @@
+presets:
+  global:
+    # Se asegura que haya al menos 10 gigas disponibles antes de ponerse a descargar.
+    free_space:
+      path: /Media
+      space: 10000
+ 
+    regexp:
+      reject:
+        - sub[s][\s\._]: {from: title}  # Bloquea todos los torrent que contengan la palabra sub(s) (subtitulos=
+        - ^\[[^\]]+\]: {from: title}    # Bloquea todos los torrent con este patrón en su titulo "[ <algo> ]"
+        - 3D: {from: title}             # Bloquea todos los torrent con la palabra 3D en su título. (no tengo 3D)
+        - R5: {from: title}             # Las siguientes expresiones intentan detectar torrents que tengan una calidad pobre.
+        - WEBSCR: {from: title}         
+        - Cam: {from: title}
+   
+  # torrent_alive: 20 # Requiere que el torrent tenga al menos 20 semillas disponibles, descomenta si lo quieres utilizar.
+    
+ #  En este apartado especificamos que series nos queremos descargar.
+
+    series:
+      hdtv:
+        - Dexter
+        - House
+        - The Walking Dead
+        - Grey's Anatomy:
+              watched: S08E09      # Le decimos a flexget que ese capítulo ya lo hemos visto y que empiece a descargar a partir de ahi
+        - The Big Bang Theory:
+              watched: S05E10      # Le decimos a flexget que ese capítulo ya lo hemos visto y que empiece a descargar a partir de ahi
+        
+   # download: ~/Media/Series/
+    deluge:                        # Le decimos a flexget que queremos utilizar deluge para descargar los torrent
+      user: deluge                 # Nombre de usuario a utilizar para lanzar deluge
+      pass: deluge                 # Contraseña. Ni este parametro ni el anterior suelen ser necesarios para el correcto funcionamiento de deluge
+      movedone: /Media/Series/%(series_name)s/Season %(series_season)d/
+          # El parametro movedone, le dice a deluge donde guardar las descargas, series_name y series_season, le dice que cree un directorio con el 
+          # nombre de la serie y que guarde los capitulos divididos en temporadas, si las carpetas no existen se crearán automaticamente.
+
+feeds:    # En este apartado concretamos los feeds que queremos utilizar, no suelen ser necesarios tantos.
+  demonoid:
+    rss: http://static.demonoid.me/rss/3.xml         # Demonoid (All TV)
+    preset: global                                   # Esta linea le dice a flexget que configuración utilizar con el RSS, en este caso utilizamos la
+                                                     # que hemos especificado al principio con la etiqueta global
+  torlock:
+    rss: http://www.torlock.com/television/rss.xml   # TorLock (TV)
+    preset: global
+  ezrss:
+    rss: http://www.ezrss.it/feed/
+    preset: global
+  camorra:
+    rss: http://showrss.karmorra.info/feeds/all.rss  # Karmorra (All)
+    preset: global
+
