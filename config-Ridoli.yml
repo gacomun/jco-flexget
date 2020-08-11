@@ -1,0 +1,66 @@
+variables: variables-ridoli.yml
+templates:
+  transmissionrpc:
+    transmission:
+      host: 192.168.1.38
+      port: 9091
+      username: gacomun
+      password: JcO45101814
+tasks:
+  Movies-Queue-Esp: 
+    priority: 4
+    exec:
+      on_exit:
+        for_accepted:
+          - echo "tmdb_name     {{tmdb_name}}" >> ''
+          - echo "movie_name    {{movie_name}}" >> ''
+    inputs:
+      - trakt_list:
+          username: '{? trakt.username ?}'
+          #account: '{? trakt.account ?}'
+          list: '{? trakt.userlist ?}'
+          type: movies
+    accept_all: yes
+    disable:
+      - seen
+    list_clear:
+      what:
+        - movie_list: Movies-Esp
+      phase: start
+    list_add:
+      - movie_list: Movies-Esp
+    tmdb_lookup:
+      language: es
+
+  Movies-Download-Esp:  
+    priority: 5
+    torrent_alive: 2
+    no_entries_ok: yes
+    template:
+      - transmissionrpc
+    tmdb_lookup:
+      language: es
+    discover:
+      what:
+        - movie_list: Movies-Esp
+      from:
+        - descargas2020: yes
+    quality: webrip+
+    content_size:
+      min: 500
+      max: 20000      
+    list_match:
+      from:
+        - movie_list: Movies-Esp
+    set:
+      path: '/home/javier/Programas/flexget/descargas/'  
+      label: movies 
+    notify:
+      entries:
+        message: "Se ha comenzado a descargar la siguiente película: {{tmdb_name}} ({{tmdb_year}})"  
+        via:
+          - telegram:
+              bot_token: '{? telegram.token ?}'
+              parse_mode: markdown  
+              recipients:
+                - username: '{? telegram.user ?}' 

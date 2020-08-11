@@ -1,0 +1,257 @@
+variables: variables-peregrinox.yml
+templates:
+  torrent_server:
+    transmission:
+      host: localhost
+      port: 9091
+      magnetization_timeout: 30
+      path: '{? path.download.shows ?}'
+
+##### Disable builtins for some tasks
+#
+  disable-seen-retry:
+    disable:
+      - seen
+      - seen_info_hash
+      - retry_failed
+
+  sigo-series:
+    series:
+      actuales-HD:
+        - Borgoña
+
+  anchors:
+    _trakt_list_1: &trakt_list_1
+      trakt_list: &trakt_list_1_props
+        username: '{? trakt.user1.name ?}'
+        #account:
+        list: '{? trakt.user1.list_rss ?}'
+        type: shows
+#    _trakt_list_2: &trakt_list_2
+#      trakt_list: &trakt_list_2_props
+#        username: '{? trakt.user2.name ?}'
+#        list: '{? trakt.user2.list_rss ?}'
+#        type: shows
+    _thetvdb_list_2: &thetvdb_list_2
+      thetvdb_list:
+        username: '{? thetvdb.username2 ?}'
+        account_id: '{? thetvdb.accountid2 ?}'
+    _settings_newpct: &settings_newpct
+      settings:
+        ep_regexp:
+          - Cap.(\d+)(\d\d)
+        quality: 1080p 720p
+        identified_by: ep
+        path: '{? path.download.shows ?}'
+
+  tv_old:
+    series:
+      settings:
+        tv_search:
+          quality: 1080p 720p
+      tv_search:
+        - Better Call Saul:
+            ep_regexp:
+              - Cap.(\d+)(\d\d)
+            identified_by: ep
+        - Breaking Bad:
+            begin: S03E01
+tasks:
+
+  fill-series-list:
+#    priority: 2
+    template:
+      - disable-seen-retry
+#   metainfo_series: yes
+    thetvdb_lookup:
+      language: es
+    list_clear:
+      what:
+        - entry_list: trakt-series
+    inputs:
+#      - <<: *trakt_list_2
+      - <<: *trakt_list_1
+#     - imdb_watchlist:
+#         user_id: '{? imdb.user1.id ?}'
+#         list: '{? imdb.user1.listseriesid ?}'
+#         force_language: es-es
+    accept_all: yes
+    set:
+#      title: "{{tvdb_series_name|replace(':', '')|replace('ó','o')|escape|replace('&#39;', '')}}"
+      title: "{{tvdb_series_name|replace(':', '')|replace('ó','o')|replace('Marvel\\'s ', '')}}"
+    list_add:
+      - entry_list: trakt-series
+
+  spaseries:
+    template:
+      - torrent_server
+    priority: 5
+    configure_series:
+      from:
+        entry_list: trakt-series
+      <<: *settings_newpct
+    rss:
+      url: http://esrora.x10host.com/descargas2020.xml
+#      url: http://feeds2.feedburner.com/newpctorrent/
+#      url: http://www.descargas2020.com/feed/
+
+# tests with favorites lists. can't translate to spanish
+  test_tvtask:
+    rss:
+      url: http://esrora.x10host.com/descargas2020.xml
+    sequence:
+#      - configure_series:
+#          from:
+#            <<: *trakt_list_2
+      - configure_series:
+          from:
+            <<: *trakt_list_1
+    thetvdb_lookup:
+      language: es
+    disable:
+      - seen
+      - seen_info_hash
+
+  mis_series:
+    rss:
+      url: http://esrora.x10host.com/descargas2020.xml
+    template:
+      - torrent_server
+      - sigo-series
+    series:
+      settings:
+        actuales-HD:
+          ep_regexp:
+            - Cap.(\d+)(\d\d)
+          quality: 1080p 720p
+          identified_by: ep
+          path: '{? path.download.shows ?}'
+    thetvdb_lookup: yes
+
+  search_series:
+    template: [tv_old]
+    discover:
+      what:
+        - next_series_episodes:
+            from_start: yes
+      from:
+        - descargas2020: yes
+
+  # old wathlist task
+  fill-movie-list:
+    priority: 1
+    interval: 2 hours
+    template:
+      - disable-seen-retry
+    inputs:
+      - imdb_watchlist:
+          user_id: '{? imdb.user1.id ?}'
+          list: watchlist
+          force_language: es-es
+#      - imdb_watchlist:
+#          user_id: '{? imdb.user2.id ?}'
+#          list: watchlist
+#          force_language: es-es
+    tmdb_lookup:
+      language: es
+    accept_all: yes
+# should not be needed while using movie_list + imdb_lookup in filter task because match is by imdb_id, not title
+#    set:
+#      title: "{{title|replace(':', '')|replace('á','a')|replace('é','e')|replace('í','i')|replace('ó','o')|replace('ú','u')}}"
+    list_add:
+      - movie_list: wanted_movies
+
+  spapelis:
+    template:
+      - torrent_server
+    rss:
+      url: http://esrora.x10host.com/descargas2020.xml
+    parsing:
+      movie: guessit
+    # seen_movies: loose
+    list_match:
+      from:
+        - movie_list: wanted_movies
+    quality: 1080p !bluray
+    tmdb_lookup:
+      language: es
+
+  busca_pelis:
+    priority: 10
+    discover:
+      what:
+        - movie_list:
+            list_name: wanted_movies
+            strip_year: yes
+      from:
+        - descargas2020: yes
+    imdb_lookup: yes
+#   tmdb_lookup: yes
+#   trakt_lookup: yes
+    torrent_alive: 10
+    quality:
+      - 1080p
+    set:
+      path: '{? path.download.movies ?}'
+    list_match:
+      from:
+        - movie_list: wanted_movies
+    regexp:
+      reject:
+        - 'sub[s][\s\._]'
+        - '[Ll]atino'
+        - '[Ss]creener'
+        - '[Ss]creener':
+            from: url
+        - Screeener
+        - Screeener:
+            from: url
+        - 3D
+      from: title
+
+  clean-transmission:
+    priority: 10
+    clean_transmission:
+      host: localhost
+      port: 9091
+#     finished_for: 2 hours
+#     min_ratio: 0.1
+      directories:
+        - \A/+media/+Elements/+flexget/+series(\Z|/+.*)
+
+  sort-series:
+    priority: 20
+    filesystem:
+      path: '{? path.download.shows ?}'
+      regexp: '.*\.(avi|mkv|mp4)$'
+      recursive: 2
+      retrieve: files
+    manipulate:
+      - title:
+          from: location
+      - title:
+          replace:
+            regexp: '(.*)/(.*)/(.*)'
+            format: '\2'
+    seen: local
+    metainfo_series: yes
+    thetvdb_lookup: yes
+    # NOTE: You must set the parse_only option for all of the series groups you have configured in your template.
+    # This option prevents the series plugin from accepting or rejecting anything in this feed.
+    # it will merely fill in parsed metadata for the matching series on each entry 
+    configure_series:
+      from:
+        entry_list: trakt-series
+      settings:
+        parse_only: yes
+        identified_by: ep
+    # Ignore samples
+    regexp:
+      reject: 
+        - sample
+    # With the require_field and accept_all plugins, we accept anything that the series plugin has successfully parsed.
+    require_field: series_name
+    accept_all: yes
+    move:
+      to: '{? path.kodi.shows ?}{{series_name}}'
+      rename: '{{ series_name }} {{ series_id }}'

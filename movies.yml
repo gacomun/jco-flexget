@@ -1,0 +1,74 @@
+presets:
+  global:
+    # Se asegura que haya al menos 10 gigas disponibles antes de ponerse a descargar.
+    free_space:
+      path: /Media
+      space: 10000
+    
+    regexp:
+      reject:
+        - sub[s][\s\._]: {from: title}  # Bloquea todos los torrent que contengan la palabra sub(s) (subtitulos=
+        - ^\[[^\]]+\]: {from: title}    # Bloquea todos los torrent con este patrón en su titulo "[ <algo> ]"
+        - 3D: {from: title}             # Bloquea todos los torrent con la palabra 3D en su título. (no tengo 3D)
+        - R5: {from: title}             # Las siguientes expresiones intentan detectar torrents que tengan una calidad pobre.
+        - WEBSCR: {from: title}         
+        - Cam: {from: title}
+  movies-global:
+    inputs:
+      - rss: http://static.demonoid.me/rss/1.xml        # Demonoid (All Movies)
+      - rss: http://www.torlock.com/movies/rss.xml      # TorLock (Movies)
+      - rss: http://torrentz.eu/feed_verified?q=movies  # Torrentz (Verified Movies)
+      - rss: http://rss.thepiratebay.org/207            # The Pirate Bay (Highres - Movies)
+    # Impose reasonable size constraints
+    content_size:
+      max: 16000
+      min: 1000
+    seen_movies: strict # No descarganos películas que ya hayamos visto
+    imdb_required: yes
+    # Comprueba las películas que ya tenemos descargadas para no repetirlas
+    exists_movie:
+      - /Media/Movies/
+    deluge:
+      # Guarda las peliculas en carpetas con nombres facilmente reconocibles. 
+      movedone: "/Media/Movies/{{ imdb_name }} ({{ imdb_year }})"
+      content_filename: |
+        {{ imdb_name }} ({{ imdb_year }}) - {{ quality }}      
+ 
+
+  # This preset grabs highly rated movies from after 2001 except some genres
+  # that I don't really care for.
+  movies-auto:
+    quality:
+      min: 720p   (calidad de descarga de la pelicula, 720p o lo que es lo mismo calidad blueray.
+       
+    # Check for the movie on IMDB
+    imdb:
+      min_score: 6.0 # Calificación de la peli. Minimo 6/10 de ahi para arriba
+      min_votes: 5000 # Votos minimos de la gente que ha visto la pelícla
+      # min_year: 2000   #  Año minimo de estreno de la pelicula. Descomenta si lo quieres utlizar
+      # A bunch of genres I don't want
+      reject_genres:
+        - musical
+        - romance
+        - documentary
+        - drama
+        - animation
+      accept_languages:
+        - english # Se asegura de los idiomas en los que están las películas, yo me las bajo o bien en inglés o bien en español
+        - spanish
+      reject_mpaa_ratings:
+        - G # Sistema de calificación mppa, en este caso no nos descargamos peliculas "infantiles"
+ 
+    deluge:                     #Le dice a flexget que descargue los torrent obtenidos con deluge.
+      user: deluge
+      pass: deluge
+      queuetotop: no
+      label: movies-auto
+# En esta linea especificamos los feeds, utilizaremos los especificados en la etiqueta movies-auto y utilizaremos la configuración concretada en
+# movies-global
+feeds:
+  Auto_movies:
+    priority: 13
+    preset:
+      - movies-global
+      - movies-auto

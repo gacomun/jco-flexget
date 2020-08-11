@@ -1,0 +1,23 @@
+imdb:
+  user1:
+    id: ur98765432
+    listseriesid: ls021273471
+  user2:
+    id: ur12345678
+    listseriesid: watchlist
+trakt:
+  user1:
+    name: gacomun@gmail.com
+    list_rss: series-descarga
+  user2:
+    name: user-name2
+    list_rss: serie-list
+thetvdb:
+  username2: userthetv
+  accountid2: ABCDE1234567890
+path:
+  download:
+    shows: /home/javier/Programas/flexget/descargas/series/
+    movies: /home/javier/Programas/flexget/descargas/peliculas/
+  kodi:
+    shows: /home/javier/Programas/flexget/descargas/series/

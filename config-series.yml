@@ -1,0 +1,63 @@
+templates:
+  tv:
+    download: /home/javier/Programas/flexget/descargas/
+    series:
+      settings:
+        my group:
+          quality: 
+            hdtv <720p
+          identified_by: 
+            ep
+      my group:
+        - Friends            
+        - Pocoyó
+        - Cómo conocí a vuestra madre
+        - Death Note
+        - Fullmetal Alchemist Brotherhood
+        - FullMetal Alchemist
+        - Berserk
+        - Hermanos de sangre
+        - Big Bang
+        - Futurama
+        - Los Caballeros del Zodiaco
+        - Súper Campeones
+        - Supercampeones Road to 2002
+        - Dai Apolon el Robot del Espacio
+        - Ataque a los Titanes
+        - Doraemon
+    transmission:
+      host: 192.168.1.38
+      port: 9091
+      username: gacomun
+      password: JcO45101814
+tasks:
+  test task:
+    rss: http://esrora.x10host.com/descargas2020.xml
+    template: tv
+  remove_stale_torrents:
+    from_transmission:
+      host: 192.168.1.38
+      port: 9091
+      username: gacomun
+      password: JcO45101814
+    disable: [seen, seen_info_hash]
+    if:
+      - transmission_progress == 100: accept
+      - not transmission_seed_ratio_ok: reject
+      - not transmission_idle_limit_ok: reject
+    transmission:
+      host: 192.168.1.38
+      port: 9091
+      username: gacomun
+      password: JcO45101814
+      action: purge
+  # automatic searching
+  discover-series:
+    template: [tv]
+    discover:
+      what:
+        - next_series_episodes:
+            from_start: yes
+      from:
+        - descargas2020: yes
+      interval: 1 hour  # Search for expected episodes again every hour
